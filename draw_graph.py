@@ -47,6 +47,18 @@ def get_attractive_sum(node):
     print("calculating attractive force...")
     # shoule only sum for nodes that are connected of course
     # TODO: add that
+
+    # we figure out the index of the node we are currently on
+    # nodes = [[0,1,2,3],[4,5,6,7],[8,9,1,0],[1,2,3,4]]
+    # adjacencyMatrix = [[],[],[],[],[],[],[],[],[],[]....etc
+    # call index 0
+    # then we need to check against row 1, 2....n where n is number of nodes all at index 0
+    # if the value is 0, we skip, if the value is not 0, we don't skip
+
+    # then if index is 1, we do the same for 1 etc.
+
+    # TODO: reinstate the deleted populateGraph function, it initialized the edge values lol
+
     for i in layout:
         if i is node:
             continue
@@ -102,4 +114,17 @@ def get_repulsive_sum(node):
     return sum_of_repulsive_forces
 
 
-calculate_positions()
+def set_graph_edge_values():
+    adjacencyMatrix = np.random.randint(
+        0, 10, (NUMBER_OF_NODES, NUMBER_OF_NODES))
+
+    i = 0
+    while i < NUMBER_OF_NODES:
+        adjacencyMatrix[i][i] = 0
+        i += 1
+
+    print(adjacencyMatrix)
+
+
+set_graph_edge_values()
+# calculate_positions()
