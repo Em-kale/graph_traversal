@@ -1,4 +1,3 @@
-
 import numpy as np
 
 # Graph constants
@@ -7,22 +6,31 @@ NUMBER_OF_NODES = 4
 
 # Force directed algorithm constants
 FORCE_THRESHOLD = 1
-MAX_ITERATIONS = 1
+MAX_ITERATIONS = 500
 REPULSION_CONSTANT = 2.0
 MIN_DISTANCE = 0.05
 INITIAL_COOLING_FACTOR = 1
 COOLING_FACTOR_DECAY = 0.99
 
 # For total area of canvas
-HEIGHT = 20
-WIDTH = 20
+HEIGHT = 20.0
+WIDTH = 20.0
 
 # our graph
-# TODO: MUST BE SYMMETRICAL
+# must by symmetrical
 adjacencyMatrix = np.random.randint(0, 10, (NUMBER_OF_NODES, NUMBER_OF_NODES))
+# can get a symmetrical matrix by averaging a matrix with its transpose
+# the potential issue is that this may lead to not very many 0s, and
+# therefore almost all nodes connected, so we might need to inject
+# some zeroes later
+symmetricalAdjacencyMatrix = (adjacencyMatrix + adjacencyMatrix.T) / 2
+adjacencyMatrix = symmetricalAdjacencyMatrix
+
+# set edges on diaganal to zero sa that will be between one node and itself
+np.fill_diagonal(adjacencyMatrix, 0)
 
 # initial coordinates for all nodes set to random values
-layout = np.zeros((NUMBER_OF_NODES, 3))
+layout = np.random.uniform(0, 10, (NUMBER_OF_NODES, 3))
 
 # number of rows / columns == number of nodes
 # use force directed algorithm to determine new positions for all of our nodes
@@ -47,12 +55,13 @@ def calculate_positions(positionLayout):
         forces = np.zeros((NUMBER_OF_NODES, 3))
         i = 0
         while i < len(positionLayout):
+            print("calculating repulsive forces...")
             repulsive_force = get_repulsive_sum(
                 positionLayout[i], positionLayout)
 
-            # can technically derive all arguments from positionlayout and the index,
-            # but whatever for now
-
+            # can technically derive all arguments from positionlayout
+            # and the index,but whatever for now
+            print("calculating attractive forces...")
             attractive_force = get_attractive_sum(
                 positionLayout[i], i, positionLayout)
 
@@ -79,17 +88,19 @@ def calculate_positions(positionLayout):
 
 
 def get_attractive_sum(node, index, positionLayout):
-    spring_force_sum = np.array([0, 0, 0])
-    print("calculating attractive force...")
+    spring_force_sum = np.array([0.0, 0.0, 0.0])
     # shoule only sum for nodes that are connected of course
 
     # then if index is 1, we do the same for 1 etc.
     i = 0
     while i < len(positionLayout):
+        print(i)
         # check index of i in adjacencyMatrix against index of node
         # in adjacencyMatrix, see if corresponding edge is 0
         edge = adjacencyMatrix[index, i]
+
         if edge == 0:
+            i += 1
             continue
 
         euclidian_distance = np.linalg.norm(positionLayout[i]-node)
@@ -109,7 +120,13 @@ def get_attractive_sum(node, index, positionLayout):
         area = WIDTH * HEIGHT
         ideal_length = np.sqrt((area / NUMBER_OF_NODES))
 
-        spring_force = np.log(euclidian_distance / ideal_length)*unit_vector
+        # Typical algorithms for this don't take into consideration the edge weight
+        # here i multiply the edge weight by the ideal length which makes sense
+        # when edge_weight represents the length of the edge, and not the strength of the connection
+        # in that case, it would be the inverse
+        spring_force = (np.log(euclidian_distance /
+                        ideal_length*edge)*unit_vector)
+
         spring_force_sum += spring_force
         i += 1
 
@@ -120,19 +137,20 @@ def get_attractive_sum(node, index, positionLayout):
 
 
 def get_repulsive_sum(node, positionLayout):
-    sum_of_repulsive_forces = np.array([0, 0, 0])
-    print("calculating repulsive force...")
-    for i in positionLayout:
-        if i is node:
+    sum_of_repulsive_forces = np.array([0.0, 0.0, 0.0])
+    i = 0
+    while i < len(positionLayout):
+        if positionLayout[i] is node:
+            i += 1
             continue
         # calculate euclidian distance between the points
         # this is just the magnitude of the difference as a scalar, and encodes
         # no information about direction
-        euclidian_distance = np.linalg.norm(i-node)
+        euclidian_distance = np.linalg.norm(positionLayout[i]-node)
         if euclidian_distance < MIN_DISTANCE:
             euclidian_distance = MIN_DISTANCE
         # calclate the unit vector between i and node , from i -> node
-        vector_between_nodes = node - i
+        vector_between_nodes = node - positionLayout[i]
 
         # calculate unit vector (same direction as vector
         # between nodes but length 1)
@@ -141,15 +159,11 @@ def get_repulsive_sum(node, positionLayout):
         # calculate repulsive force
         sum_of_repulsive_forces += ((REPULSION_CONSTANT /
                                     (euclidian_distance ** 2)) * unit_vector)
+        i += 1
     return sum_of_repulsive_forces
 
 
-def set_graph_edge_values(matrix):
-    i = 0
-    while i < NUMBER_OF_NODES:
-        matrix[i][i] = 0
-        i += 1
+print("initial layout", layout)
+print("\nadjacency matrix", adjacencyMatrix)
 
-
-set_graph_edge_values(adjacencyMatrix)
-print(calculate_positions(layout))
+print("Final graph", calculate_positions(layout))
