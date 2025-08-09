@@ -1,23 +1,24 @@
 import numpy as np
 
 
-class GraphLayout():
+# TODO: Restrict the positions to the same canvas size manim uses
+# TODO: this class should take the frame height and width as a parameter to do this
+class GraphInitializer():
 
     # Graph constants
-    UPPER_BOUND = 10
-    NUMBER_OF_NODES = 4
+    NUMBER_OF_NODES = 10
 
     # Force directed algorithm constants
-    FORCE_THRESHOLD = 1
-    MAX_ITERATIONS = 500
-    REPULSION_CONSTANT = 2.0
-    MIN_DISTANCE = 0.05
+    FORCE_THRESHOLD = 0.9
+    MAX_ITERATIONS = 2000
+    REPULSION_CONSTANT = 10.0
+    MIN_DISTANCE = 0.5
     INITIAL_COOLING_FACTOR = 1
     COOLING_FACTOR_DECAY = 0.99
 
     # For total area of canvas
-    HEIGHT = 20.0
-    WIDTH = 20.0
+    HEIGHT = 30.0
+    WIDTH = 30.0
 
     def __init__(self):
         # our graph
@@ -41,9 +42,16 @@ class GraphLayout():
     # ------------------- PUBLIC METHODS -------------------------
 
     # public
-    def get_graph(self):
-        return self.calculate_positions()
+    def get_graph_layout(self):
+        return self.__calculate_positions(self.layout)
 
+    # public
+    def get_graph(self):
+        return self.adjacencyMatrix
+
+    # public
+    def get_initial_layout(self):
+        return self.layout
     # ------------------- PRIVATE METHODS -------------------------
 
     # use force directed algorithm to get new positions for all of our nodes
@@ -55,8 +63,8 @@ class GraphLayout():
         temp_positions = np.zeros((self.NUMBER_OF_NODES, 3))
         cooling_factor = self.INITIAL_COOLING_FACTOR
         # using Eade's force directed algorithm for simplicity
-        while currentIteration < self.MAX_ITERATIONS \
-                and maxForce > self.FORCE_THRESHOLD:
+        while currentIteration < self.MAX_ITERATIONS:
+            # and maxForce > self.FORCE_THRESHOLD:
 
             # let forces be an array holding an array for each node
             # AKA 2D array with NUMBER_OF_NODES arrays set to zero originally
@@ -69,12 +77,12 @@ class GraphLayout():
             # start with drilling down to the node level in our matrix
             # iterate through the rows
             while i < len(positionLayout):
-                repulsive_force = self.get_repulsive_sum(
+                repulsive_force = self.__get_repulsive_sum(
                     positionLayout[i], positionLayout)
 
                 # can technically derive all arguments from positionlayout
                 # and the index,but whatever for now
-                attractive_force = self.get_attractive_sum(
+                attractive_force = self.__get_attractive_sum(
                     positionLayout[i], i, positionLayout)
 
                 total_force = repulsive_force + attractive_force
@@ -137,7 +145,7 @@ class GraphLayout():
             # and not the strength of the connection
             # otherwise, it would be the inverse
             spring_force = (np.log(euclidian_distance /
-                            ideal_length*edge)*unit_vector)
+                            ideal_length)*unit_vector)
 
             spring_force_sum += spring_force
             i += 1
