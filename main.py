@@ -2,6 +2,9 @@ import manim as m
 from graph_initializer import GraphInitializer
 
 
+# TODO: have this class accept the type of algorithm by
+# taking a parameter, then selecting the correct function to call
+# also figure out what the name for that architecture is
 class MyScene(m.Scene):
     def construct(self):
         initializer = GraphInitializer()
@@ -9,32 +12,86 @@ class MyScene(m.Scene):
         # Get random graph layout, processed by force directed algo
         initialLayout = initializer.get_initial_layout()
         graphLayout = initializer.get_graph_layout()
-        nodes = [m.Circle] * len(graphLayout)
-        nodes_initial = [m.Circle] * len(graphLayout)
+
+        # get adjacencyMatrix
+        graph = initializer.get_graph()
+
+        self.nodes = [m.Circle] * len(graphLayout)
+        self.nodes_initial = [m.Circle] * len(graphLayout)
 
         # create a circle for each node using graphLayout as positions
         i = 0
         while i < len(graphLayout):
-            nodes[i] = m.Circle(
-                color=m.BLUE, fill_opacity=1).move_to(graphLayout[i])
+            self.nodes[i] = m.Circle(
+                color=m.WHITE, fill_color=m.BLUE, fill_opacity=1)\
+                .move_to(graphLayout[i])
             i += 1
 
         j = 0
         while j < len(graphLayout):
-            nodes_initial[j] = m.Circle(
-                color=m.RED, fill_color=1).move_to(initialLayout[j])
+            self.nodes_initial[j] = m.Circle(
+                color=m.WHITE, fill_color=m.RED, fill_opacity=1)\
+                .move_to(initialLayout[j])
             j += 1
 
-        for node in nodes:
+        # Create array to hold the edges maybe this functionality can
+        # be rolled up into the graph class
+        initialEdges = []
+        k = 0
+        # Calculate edge start and end points for the initial graph
+        while k < len(graphLayout):
+            n = 0
+            while n < len(graphLayout):
+                if graph[k, n] == 0:
+                    n += 1
+                    continue
+                else:
+                    initialEdges.append([initialLayout[k], initialLayout[n]])
+                n += 1
+            k += 1
+
+        edges = []
+        x = 0
+        # Calculate edge start and end points for the transformed graph
+        while x < len(graphLayout):
+            y = 0
+            while y < len(graphLayout):
+                if graph[x, y] == 0:
+                    y += 1
+                    continue
+                else:
+                    edges.append([graphLayout[x], graphLayout[y]])
+                y += 1
+            x += 1
+
+        self.initialLines = []
+        self.transformedLines = []
+
+        # create a line object for each edge
+
+        for initialEdge in initialEdges:
+            self.initialLines.append(
+                m.Line(initialEdge[0], initialEdge[1]).set_color(m.WHITE))
+
+        for edge in edges:
+            self.transformedLines.append(
+                m.Line(edge[0], edge[1]).set_color(m.WHITE))
+
+        self.animate()
+
+    def animate(self):
+        # Now animate them
+        for initial_node in self.nodes_initial:
+            self.play(m.Create(initial_node))
+            self.wait(1)
+        for initialLine in self.initialLines:
+            self.add(initialLine)
+            self.wait(1)
+
+        for node in self.nodes:
             self.play(m.Create(node))
             self.wait(1)
 
-        for initial_node in nodes_initial:
-            self.play(m.Create(initial_node))
+        for transformedLine in self.transformedLines:
+            self.add(transformedLine)
             self.wait(1)
-
-        # draw lines between them
-
-        #
-        #        l1 = Line(d1.get_center(), d2.get_center())
-        #        l2 = Line(d3.get_center(), d4.get_center())
