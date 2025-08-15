@@ -1,40 +1,63 @@
 import numpy as np
 
 
-# TODO: Restrict the positions to the same canvas size manim uses
-# TODO: this class should take the frame height and width as a parameter to do this
 class GraphInitializer():
 
     # Graph constants
-    NUMBER_OF_NODES = 10
+    NUMBER_OF_NODES = 15
+    # this should increase as NUMBER_OF_NODES increases
+
+    NULL_EDGE_PROBABILITY = NUMBER_OF_NODES * 4 / 100
 
     # Force directed algorithm constants
-    FORCE_THRESHOLD = 0.9
-    MAX_ITERATIONS = 2000
-    REPULSION_CONSTANT = 10.0
-    MIN_DISTANCE = 0.5
+    # TODO: reinstate this as a factor
+    FORCE_THRESHOLD = 0.01
+
+    MAX_ITERATIONS = 1000
+    REPULSION_CONSTANT = NUMBER_OF_NODES
+    MIN_DISTANCE = 0.7
+
     INITIAL_COOLING_FACTOR = 1
     COOLING_FACTOR_DECAY = 0.99
 
     # For total area of canvas
-    HEIGHT = 30.0
-    WIDTH = 30.0
+    HEIGHT = 40.0
+    WIDTH = 40.0
 
     def __init__(self):
         # our graph
         # must by symmetrical
         adjacencyMatrix = np.random.randint(
-            0, 10, (self.NUMBER_OF_NODES, self.NUMBER_OF_NODES))
+            2, 12, (self.NUMBER_OF_NODES, self.NUMBER_OF_NODES))
+
+        # create a mask, which is a matrix corresponding to
+        # the adjacencyMatrix where every value is true
+        # if it is above the edge probability
+        # and false if it is below it, then if it is false
+        # we will set those values to zero to ensure that
+        # around the edge probability gets set to zero
+        edgeMask = np.random.rand(
+            self.NUMBER_OF_NODES, self.NUMBER_OF_NODES) \
+            < self.NULL_EDGE_PROBABILITY
+
+        # this inverts the array and applies the mask
+        # giving a boolean array like this to a numpy array
+        # will apply it as a mask
+        adjacencyMatrix[edgeMask] = 0
 
         # can get a symmetrical matrix by averaging a matrix with its transpose
         # the potential issue is that this may lead to not very many 0s, and
         # therefore almost all nodes connected, so we might need to inject
         # some zeroes later
-        symmetricalAdjacencyMatrix = (adjacencyMatrix + adjacencyMatrix.T) / 2
+        symmetricalAdjacencyMatrix = np.minimum(
+            adjacencyMatrix, adjacencyMatrix.T)
         self.adjacencyMatrix = symmetricalAdjacencyMatrix
 
+        np.fill_diagonal(self.adjacencyMatrix, 0)
+        self.__ensure_no_orphans()
         # set edges on diaganal to zero as that will be between node and itself
-        np.fill_diagonal(adjacencyMatrix, 0)
+
+        # make sure there are no orphaned nodes
 
         # initial coordinates for all nodes set to random values
         self.layout = np.random.uniform(0, 10, (self.NUMBER_OF_NODES, 3))
@@ -52,6 +75,7 @@ class GraphInitializer():
     # public
     def get_initial_layout(self):
         return self.layout
+
     # ------------------- PRIVATE METHODS -------------------------
 
     # use force directed algorithm to get new positions for all of our nodes
@@ -63,8 +87,8 @@ class GraphInitializer():
         temp_positions = np.zeros((self.NUMBER_OF_NODES, 3))
         cooling_factor = self.INITIAL_COOLING_FACTOR
         # using Eade's force directed algorithm for simplicity
-        while currentIteration < self.MAX_ITERATIONS:
-            # and maxForce > self.FORCE_THRESHOLD:
+        while currentIteration < self.MAX_ITERATIONS \
+                and maxForce > self.FORCE_THRESHOLD:
 
             # let forces be an array holding an array for each node
             # AKA 2D array with NUMBER_OF_NODES arrays set to zero originally
@@ -144,8 +168,13 @@ class GraphInitializer():
             # this applies when edge_weight represents the length of the edge,
             # and not the strength of the connection
             # otherwise, it would be the inverse
-            spring_force = (np.log(euclidian_distance /
-                            ideal_length)*unit_vector)
+            spring_force = 0
+            if (euclidian_distance < 0.1):
+                spring_force = edge*(euclidian_distance /
+                                     ideal_length)*unit_vector
+
+            spring_force = edge*(np.log(euclidian_distance /
+                                        ideal_length)*unit_vector)
 
             spring_force_sum += spring_force
             i += 1
@@ -184,3 +213,25 @@ class GraphInitializer():
             i += 1
 
         return sum_of_repulsive_forces
+
+    # private
+    def __ensure_no_orphans(self):
+        i = 0
+        while i < len(self.adjacencyMatrix[0]):
+            if np.sum(self.adjacencyMatrix[i]) == 0:
+                # need this value to not be the value of the row
+                # if i = 0, then j must not be zero
+                if i + 1 <= 3:
+                    j = np.random.randint(i+1, 4)
+                else:
+                    j = np.random.randint(0, i)
+
+                # horribly inefficient way to handle this
+                if i == j:
+                    self.__ensure_no_orphans()
+
+                nonZeroEdge = np.random.uniform(1, 10)
+                self.adjacencyMatrix[i, j] = nonZeroEdge
+                self.adjacencyMatrix[j, i] = nonZeroEdge
+
+            i += 1
