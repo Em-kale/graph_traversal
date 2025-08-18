@@ -7,7 +7,7 @@ class GraphInitializer():
     NUMBER_OF_NODES = 15
     # this should increase as NUMBER_OF_NODES increases
 
-    NULL_EDGE_PROBABILITY = NUMBER_OF_NODES * 4 / 100
+    NULL_EDGE_PROBABILITY = 0.6
 
     # Force directed algorithm constants
     # TODO: reinstate this as a factor

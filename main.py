@@ -132,16 +132,11 @@ class MyScene(m.Scene):
         if width > self.camera.frame_width or height > self.camera.frame_width:
             self.processedGraphGroup.scale(0.9)
             self.animate_djikstra()
+            return
 
         translationVector = m.ORIGIN - groupCenter
         self.processedGraphGroup.shift(translationVector)
+        self.wait(100)
 
-        for node in self.nodes:
-            self.add(node)
-            self.wait(1)
-
-        for transformedLine in self.transformedLines:
-            self.add(transformedLine)
-            self.wait(1)
-
+        self.add(self.processedGraphGroup)
         self.wait(100)
