@@ -1,3 +1,7 @@
+A project for applying a force directed algorithm for drawing a graph of arbitrary size neatly, 
+with a manim visual animation. 
+
+This functionality has been extended without the manim portion to the graph traversal visualizer on my website. 
 
 ## Usage
 
